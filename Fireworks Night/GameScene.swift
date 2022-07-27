@@ -22,12 +22,39 @@ class GameScene: SKScene {
         }
     }
     
+    var launches = 0 {
+        didSet {
+            if launches == 20 {
+                gameTimer?.invalidate()
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                    [weak self] in
+                    let gameOverLabel = SKLabelNode()
+                    gameOverLabel.fontName = "Chalkduster"
+                    gameOverLabel.fontSize = 60
+                    gameOverLabel.position = CGPoint(x: 512, y: 384)
+                    gameOverLabel.text = "GAME OVER"
+                    gameOverLabel.horizontalAlignmentMode = .center
+                    self?.addChild(gameOverLabel)
+                }
+
+            }
+        }
+    }
+    
     override func didMove(to view: SKView) {
         let background = SKSpriteNode(imageNamed: "background")
         background.position = CGPoint(x: 512, y: 384)
         background.zPosition = -1
         background.blendMode = .replace
         addChild(background)
+        
+        scoreLabel.fontName = "Chalkduster"
+        scoreLabel.fontSize = 40
+        scoreLabel.position = CGPoint(x: 12, y: 12)
+        scoreLabel.text = "Score: 0"
+        scoreLabel.horizontalAlignmentMode = .left
+        addChild(scoreLabel)
         
         gameTimer = Timer.scheduledTimer(timeInterval: 6, target: self, selector: #selector(launchFireworks), userInfo: nil, repeats: true)
     }
@@ -63,9 +90,11 @@ class GameScene: SKScene {
     }
     
     @objc func launchFireworks() {
+        launches += 1
+        
         let movementAmount: CGFloat = 1800
         var offset = -200
-        
+    
         switch Int.random(in: 0...3){
         case 0:
             for _ in 0...4 {
@@ -115,6 +144,15 @@ class GameScene: SKScene {
         emitter.position = firework.position
         addChild(emitter)
         firework.removeFromParent()
+        
+        let wait = SKAction.wait(forDuration: emitter.particleLifetime)
+        
+        let destroyFirework = SKAction.run {
+            emitter.removeFromParent()
+        }
+        
+        let sequence = SKAction.sequence([wait, destroyFirework])
+        run(sequence)
     }
     
     func explodeFireworks() {
