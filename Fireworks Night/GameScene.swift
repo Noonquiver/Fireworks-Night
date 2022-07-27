@@ -65,7 +65,8 @@ class GameScene: SKScene {
     @objc func launchFireworks() {
         let movementAmount: CGFloat = 1800
         var offset = -200
-        switch Int.random(in: 0...3) {
+        
+        switch Int.random(in: 0...3){
         case 0:
             for _ in 0...4 {
                 createFirework(xMovement: 0, x: 512 + offset, y: bottomEdge)
@@ -77,16 +78,53 @@ class GameScene: SKScene {
                 offset += 100
             }
         case 2:
-            offset = 400
-            for _ in 0...4 {
+            for offset in [400, 300, 200, 100, 0] {
                 createFirework(xMovement: movementAmount, x: leftEdge, y: bottomEdge + offset)
-                offset -= 100
             }
         default:
-            offset = 400
-            for _ in 0...4 {
+            for offset in [400, 300, 200, 100, 0] {
                 createFirework(xMovement: -movementAmount, x: rightEdge, y: bottomEdge + offset)
-                offset -= 100
+            }
+        }
+    }
+    
+    func checkTouches (_ touches: Set<UITouch>) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let nodesAtPoint = nodes(at: location)
+        
+        for case let node as SKSpriteNode in nodesAtPoint {
+            guard node.name == "firework" else { continue }
+            
+            for parent in fireworks {
+                guard let firework = parent.children.first as? SKSpriteNode else { continue }
+                
+                if firework.name == "selected" && firework.color != node.color {
+                    firework.name = "firework"
+                    firework.colorBlendFactor = 1
+                }
+            }
+            
+            node.name = "selected"
+            node.colorBlendFactor = 0
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        checkTouches(touches)
+    }
+    
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesMoved(touches, with: event)
+        checkTouches(touches)
+    }
+    
+    override func update(_ currentTime: TimeInterval) {
+        for (index, firework) in fireworks.enumerated().reversed() {
+            if firework.position.y > 900 {
+                fireworks.remove(at: index)
+                firework.removeFromParent()
             }
         }
     }
